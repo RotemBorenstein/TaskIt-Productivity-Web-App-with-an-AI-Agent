@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    #'tasks.apps.tasksConfig',
+
 ]
 
 MIDDLEWARE = [
@@ -76,10 +78,15 @@ WSGI_APPLICATION = 'TaskIt.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'taskit_db',          # <--- Your database name here
+        'USER': 'taskit_user',        # <--- Your username here
+        'PASSWORD': 'RotemBor23',     # <--- Your password here
+        'HOST': 'localhost',          # Local DB server
+        'PORT': '5432',               # Default Postgres port
     }
 }
+
 
 
 # Password validation
@@ -106,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'ASIA/Jerusalem'
 
 USE_I18N = True
 
