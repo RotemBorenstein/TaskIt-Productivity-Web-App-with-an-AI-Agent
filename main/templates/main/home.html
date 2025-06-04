@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskIt – Home</title>
+    <!-- (Later, we might link a CSS file here) -->
+</head>
+<body>
+    <div style="max-width: 600px; margin: 0 auto; padding: 2rem; text-align: center;">
+        <!-- 1. App Name & Tagline -->
+        <h1>TaskIt</h1>
+        <p style="font-size: 1.2rem; color: #555;">
+            Organize your day, conquer your goals!
+        </p>
+
+        <!-- 2. Short Description -->
+        <p style="margin-top: 1.5rem;">
+            TaskIt helps you manage daily and weekly tasks in one place.
+            Create, track, and complete tasks while staying motivated with progress stats.
+        </p>
+
+        <!-- 3. Sign Up & Log In Buttons -->
+        <div style="margin-top: 2rem;">
+            <a href="{% url 'signup' %}" style="display: inline-block; padding: 0.75rem 1.5rem;
+                 background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">
+                Sign Up
+            </a>
+            <a href="{% url 'login' %}" style="display: inline-block; padding: 0.75rem 1.5rem;
+                 background-color: #28a745; color: white; text-decoration: none; border-radius: 4px;
+                 margin-left: 1rem;">
+                Log In
+            </a>
+        </div>
+    </div>
+</body>
+</html>
