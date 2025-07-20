@@ -1,0 +1,69 @@
+{# main/templates/main/tasks.html #}
+{% extends "main/base.html" %}
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+  <section class="add-task-section">
+    <h2>Add New Task</h2>
+    <form action="{% url 'main:create_task' %}" method="post" class="add-task-form">
+      {% csrf_token %}
+      <div>
+        {{ form.title.label_tag }}<br>
+        {{ form.title }}
+      </div>
+      <div>
+        {{ form.description.label_tag }}<br>
+        {{ form.description }}
+      </div>
+      <div>
+        {{ form.task_type.label_tag }}<br>
+        {{ form.task_type }}
+      </div>
+      <button type="submit">Add Task</button>
+    </form>
+  </section>
+
+  <div class="tasks-container">
+    <section class="tasks-list daily">
+      <h2>Daily Tasks</h2>
+      <ul id="daily-tasks-list">
+        {% for task in daily_tasks %}
+          <li id="task-{{ task.id }}">
+            <label>
+              <input type="checkbox" class="task-checkbox" data-task-id="{{ task.id }}">
+              <span class="task-title">{{ task.title }}</span>
+            </label>
+            {% if task.description %}
+              <div class="task-desc">{{ task.description }}</div>
+            {% endif %}
+            <a href="{% url 'main:edit_task' task.id %}">Edit</a>
+            <a href="{% url 'main:delete_task' task.id %}">Delete</a>
+          </li>
+        {% empty %}
+          <li>No daily tasks. Enjoy your day!</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="tasks-list long-term">
+      <h2>Long-Term Tasks</h2>
+      <ul id="long-tasks-list">
+        {% for task in long_tasks %}
+          <li id="task-{{ task.id }}">
+            <label>
+              <input type="checkbox" class="task-checkbox" data-task-id="{{ task.id }}">
+              <span class="task-title">{{ task.title }}</span>
+            </label>
+            {% if task.description %}
+              <div class="task-desc">{{ task.description }}</div>
+            {% endif %}
+            <a href="{% url 'main:edit_task' task.id %}">Edit</a>
+            <a href="{% url 'main:delete_task' task.id %}">Delete</a>
+          </li>
+        {% empty %}
+          <li>No long-term tasks yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+{% endblock %}

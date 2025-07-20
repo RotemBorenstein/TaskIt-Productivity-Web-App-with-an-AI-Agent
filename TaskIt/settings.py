@@ -28,6 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -38,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
+
     #'tasks.apps.tasksConfig',
 
 ]
@@ -114,7 +116,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'ASIA/Jerusalem'
+TIME_ZONE = 'Asia/Jerusalem'
 
 USE_I18N = True
 
@@ -125,8 +127,22 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-
+STATICFILES_DIRS = [
+    BASE_DIR / "main" / "static",  # so Django knows to look in main/static/
+]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = 'main:tasks'
+
+
+
+# Where to redirect after a successful login (if not overridden in view)
+LOGIN_REDIRECT_URL = 'main:tasks'
+
+# Where to redirect if @login_required sees an unauthenticated user
+LOGIN_URL = 'login'
+
+# Optionally, where to redirect after logout (LogoutView override already did next_page='login')
+LOGOUT_REDIRECT_URL = 'login'

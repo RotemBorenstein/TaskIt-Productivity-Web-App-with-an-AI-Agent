@@ -1,0 +1,210 @@
+/* main/static/main/tasks.css */
+
+/* ------ Basic Resets and Typography ------ */
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    margin: 0;
+    padding: 0;
+}
+header {
+    background: #3a6ea5;
+    color: #fff;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.site-title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+header nav a {
+    color: #fff;
+    text-decoration: underline;
+    margin-left: 2rem;
+}
+main {
+    max-width: 950px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+h1, h2 {
+    margin-bottom: 1rem;
+}
+h2 {
+    font-size: 1.4rem;
+    color: #3a6ea5;
+}
+
+/* ------ Messages ------ */
+.messages {
+    margin: 1rem 0;
+}
+.message {
+    padding: 0.7em 1.2em;
+    margin-bottom: 0.5em;
+    border-radius: 5px;
+    background: #eaf7ed;
+    color: #257942;
+}
+.message.error {
+    background: #ffecec;
+    color: #ae1a1a;
+}
+.message.success {
+    background: #eaf7ed;
+    color: #257942;
+}
+
+/* ------ Add/Edit/Delete Task Forms ------ */
+.add-task-section, .edit-task-section, .delete-task-section {
+    background: #fff;
+    padding: 1.2rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2.2rem;
+    box-shadow: 0 2px 8px rgba(50,80,120,0.06);
+}
+.add-task-form div,
+.edit-task-form div {
+    margin-bottom: 1rem;
+}
+.add-task-form input[type="text"],
+.edit-task-form input[type="text"],
+.add-task-form textarea,
+.edit-task-form textarea {
+    width: 100%;
+    padding: 0.7em;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    font-size: 1em;
+}
+.add-task-form button,
+.edit-task-form button {
+    background: #3a6ea5;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.55em 1.4em;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.add-task-form button:hover,
+.edit-task-form button:hover {
+    background: #29537c;
+}
+.add-task-form label,
+.edit-task-form label {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.2em;
+}
+
+/* ------ Two-Column Task Lists Layout ------ */
+.tasks-container {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+.tasks-list {
+    flex: 1 1 350px;
+    background: #fff;
+    padding: 1.2rem 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(50,80,120,0.06);
+    min-width: 290px;
+}
+.tasks-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.tasks-list li {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    background: #f8fafc;
+    border-radius: 5px;
+    padding: 0.85em 1em;
+    margin-bottom: 1em;
+    transition: box-shadow 0.15s;
+    box-shadow: 0 1px 2px rgba(60,70,90,0.05);
+}
+.tasks-list li:last-child {
+    margin-bottom: 0;
+}
+.tasks-list label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex: 1 1 auto;
+}
+.task-title {
+    font-weight: 500;
+    font-size: 1.05em;
+}
+.task-desc {
+    font-size: 0.97em;
+    color: #555;
+    margin-left: 2em;
+    margin-top: 0.1em;
+    margin-bottom: 0.3em;
+}
+.tasks-list a {
+    color: #3a6ea5;
+    margin-left: 1em;
+    text-decoration: none;
+    font-size: 0.97em;
+    opacity: 0.85;
+    transition: color 0.15s, opacity 0.15s;
+}
+.tasks-list a:hover {
+    color: #ae1a1a;
+    opacity: 1;
+}
+input[type="checkbox"].task-checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    accent-color: #3a6ea5;
+    margin-right: 0.7em;
+    cursor: pointer;
+}
+
+/* ------ Fade-out animation for task removal ------ */
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+/* ------ Responsive: Stack columns on mobile ------ */
+@media (max-width: 800px) {
+    .tasks-container {
+        flex-direction: column;
+        gap: 1.3rem;
+    }
+    .tasks-list {
+        min-width: 0;
+    }
+}
+
+/* ------ Delete confirmation ------ */
+.delete-task-section button.danger {
+    background: #ae1a1a;
+}
+.delete-task-section button.danger:hover {
+    background: #8c1313;
+}
+.delete-task-section a {
+    margin-left: 2em;
+}
+
+/* ------ Misc ------ */
+a {
+    outline: none;
+}
+button:focus, input:focus, textarea:focus {
+    outline: 2px solid #3a6ea5;
+    outline-offset: 1px;
+}

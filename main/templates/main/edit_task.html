@@ -1,0 +1,26 @@
+{# main/templates/main/edit_task.html #}
+{% extends "main/base.html" %}
+{% block title %}Edit Task{% endblock %}
+
+{% block content %}
+  <section class="edit-task-section">
+    <h2>Edit Task</h2>
+    <form action="{% url 'main:edit_task' task.id %}" method="post" class="edit-task-form">
+      {% csrf_token %}
+      <div>
+        {{ form.title.label_tag }}<br>
+        {{ form.title }}
+      </div>
+      <div>
+        {{ form.description.label_tag }}<br>
+        {{ form.description }}
+      </div>
+      <div>
+        {{ form.task_type.label_tag }}<br>
+        {{ form.task_type }}
+      </div>
+      <button type="submit">Save Changes</button>
+      <a href="{% url 'main:tasks' %}">Cancel</a>
+    </form>
+  </section>
+{% endblock %}
