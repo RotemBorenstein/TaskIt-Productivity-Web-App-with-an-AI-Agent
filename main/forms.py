@@ -8,17 +8,16 @@ class TaskForm(forms.ModelForm):
     A ModelForm for creating or editing a Task, exposing only:
       - title (text input)
       - description (textarea)
-      - task_type (radio buttons: Daily or Long Term)
     """
-    task_type = forms.ChoiceField(
+    """task_type = forms.ChoiceField(
         choices=Task.TASK_TYPE_CHOICES,
         widget=forms.RadioSelect,
         label="Task Type"
-    )
+    )"""
 
     class Meta:
         model = Task
-        fields = ["title", "description", "task_type"]
+        fields = ["title", "description"]
         widgets = {
             "title": forms.TextInput(attrs={
                 "class": "form-control",
@@ -28,7 +27,7 @@ class TaskForm(forms.ModelForm):
             "description": forms.Textarea(attrs={
                 "class": "form-control",
                 "rows": 3,
-                "placeholder": "Optional description…",
+                "placeholder": "Optional description",
             }),
         }
         labels = {

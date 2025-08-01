@@ -65,11 +65,13 @@ h2 {
     border-radius: 8px;
     margin-bottom: 2.2rem;
     box-shadow: 0 2px 8px rgba(50,80,120,0.06);
+    position: relative;
 }
 .add-task-form div,
 .edit-task-form div {
     margin-bottom: 1rem;
 }
+
 .add-task-form input[type="text"],
 .edit-task-form input[type="text"],
 .add-task-form textarea,
@@ -146,12 +148,17 @@ h2 {
     font-size: 1.05em;
 }
 .task-desc {
+    max-width: 65%;
+    word-break: break-word;
+    white-space: pre-line;
     font-size: 0.97em;
     color: #555;
     margin-left: 2em;
     margin-top: 0.1em;
     margin-bottom: 0.3em;
+    display: block;
 }
+
 .tasks-list a {
     color: #3a6ea5;
     margin-left: 1em;
@@ -207,4 +214,209 @@ a {
 button:focus, input:focus, textarea:focus {
     outline: 2px solid #3a6ea5;
     outline-offset: 1px;
+}
+
+
+
+
+
+
+/* --- Card & Section Improvements --- */
+.tasks-list {
+    background: #fff;
+    padding: 1.8rem 1.3rem 1.8rem 1.3rem;
+    border-radius: 15px;
+    box-shadow: 0 2px 12px rgba(50,80,120,0.08);
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.tasks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.3em;
+}
+
+.tasks-header h2 {
+    font-size: 1.6rem;
+    color: #386eb4;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* --- "+" Button --- */
+.add-task-btn {
+    width: 1.2em;
+    height: 1.2em;
+    font-size: 1.7em;
+    background: #386eb4;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.2em;
+    margin-top: 0.2em;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(56,110,180,0.12);
+    transition: background 0.15s, box-shadow 0.12s;
+}
+
+.add-task-btn:hover, .add-task-btn:focus {
+    background: #29537c;
+    box-shadow: 0 2px 8px rgba(56,110,180,0.17);
+    outline: none;
+}
+
+/* --- Task List Items --- */
+.tasks-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.3em 0;
+}
+
+.tasks-list li {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    background: #f6fafd;
+    border-radius: 7px;
+    padding: 1em 1em 0.7em 1em;
+    margin-bottom: 1em;
+    transition: box-shadow 0.13s;
+    box-shadow: 0 1px 2px rgba(60,70,90,0.05);
+    border-bottom: 1.5px solid #e2e8f0;
+}
+
+/* --- Task Form Section Spacing --- */
+.add-task-form-container {
+    margin-top: 1.7em;
+    position: relative;
+    background: #fafdff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(40,80,180,0.07);
+    padding: 1.2em 1em 1.2em 1em;
+}
+
+/* --- Close "×" Button --- */
+.close-form-btn {
+    background: none;
+    border: none;
+    color: #ae1a1a;
+    font-size: 2.0em;
+    border-radius: 50%;
+    width: 2.2em;
+    height: 2.2em;
+    position: absolute;
+    top: 0.7em;
+    right: 0.7em;
+    cursor: pointer;
+    transition: background 0.18s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-form-btn:hover, .close-form-btn:focus {
+    background: #fdeaea;
+    outline: none;
+}
+
+/* --- Form Input Improvements --- */
+.add-task-form input[type="text"],
+.add-task-form textarea {
+    border-radius: 6px;
+    border: 1.5px solid #b6c1d2;
+    padding: 0.9em;
+    margin-bottom: 0.8em;
+    font-size: 1em;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.13s;
+}
+
+.add-task-form input[type="text"]:focus,
+.add-task-form textarea:focus {
+    border-color: #386eb4;
+    box-shadow: 0 0 2px #386eb444;
+    outline: none;
+}
+
+.add-task-form label {
+    font-weight: 600;
+    margin-bottom: 0.19em;
+    display: block;
+    font-size: 1em;
+    color: #29537c;
+}
+
+.add-task-form button[type="submit"] {
+    background: #386eb4;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.7em 2.1em;
+    font-size: 1.12em;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.4em;
+    margin-bottom: 0.6em;
+    transition: background 0.15s;
+}
+
+.add-task-form button[type="submit"]:hover,
+.add-task-form button[type="submit"]:focus {
+    background: #29537c;
+}
+
+/* --- Edit/Delete links in task row --- */
+.tasks-list a {
+    color: #386eb4;
+    margin-left: 1.1em;
+    text-decoration: none;
+    font-size: 0.99em;
+    opacity: 0.87;
+    transition: color 0.15s, opacity 0.14s;
+}
+
+.tasks-list a:hover, .tasks-list a:focus {
+    color: #ae1a1a;
+    opacity: 1;
+    outline: none;
+}
+
+/* --- Task Checkbox --- */
+input[type="checkbox"].task-checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    accent-color: #386eb4;
+    margin-right: 0.7em;
+    cursor: pointer;
+}
+
+/* --- Error Styling --- */
+.form-error {
+    color: #ae1a1a;
+    font-size: 0.97em;
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+}
+
+/* --- Fade-out animation for task removal --- */
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+/* --- Responsive: Stack columns on mobile --- */
+@media (max-width: 800px) {
+    .tasks-container {
+        flex-direction: column;
+        gap: 1.3rem;
+    }
+    .tasks-list {
+        min-width: 0;
+    }
 }

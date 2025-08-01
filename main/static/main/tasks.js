@@ -1,15 +1,15 @@
 // main/static/main/tasks.js
+console.log("tasks.js loaded!");
 
-// Wait for the DOM to fully load
 document.addEventListener("DOMContentLoaded", function () {
-  // Select all checkboxes with class 'task-checkbox'
+  // 1. AJAX "Mark Complete" for all checkboxes
   document.querySelectorAll(".task-checkbox").forEach(function (checkbox) {
     checkbox.addEventListener("change", function () {
-      if (!checkbox.checked) return; // Only handle checking, not unchecking
+      if (!checkbox.checked) return;
       const taskId = checkbox.getAttribute("data-task-id");
       if (!taskId) return;
 
-      // Get CSRF token from cookie (standard Django method)
+      // CSRF token retrieval
       function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== "") {
@@ -26,11 +26,10 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       const csrftoken = getCookie("csrftoken");
 
-      // Prepare data for POST
+      // Send AJAX POST to /tasks/complete/
       const data = new URLSearchParams();
       data.append("task_id", taskId);
 
-      // Send AJAX POST to /tasks/complete/
       fetch("/tasks/complete/", {
         method: "POST",
         headers: {
@@ -56,10 +55,52 @@ document.addEventListener("DOMContentLoaded", function () {
             checkbox.checked = false;
           }
         })
-        .catch((error) => {
+        .catch(() => {
           alert("Network error: could not mark task as complete.");
           checkbox.checked = false;
         });
     });
   });
+
+  // 2. Show/Hide Add Task Forms for Each Section
+  function showForm(formId) {
+    document.getElementById(formId).style.display = "block";
+    // Optionally close the other form
+    if (formId === "daily-form-container") {
+      document.getElementById("long-form-container").style.display = "none";
+    } else {
+      document.getElementById("daily-form-container").style.display = "none";
+    }
+  }
+  function hideForm(formId) {
+    document.getElementById(formId).style.display = "none";
+  }
+
+  // Show buttons
+  var showDailyBtn = document.getElementById("show-daily-form");
+  var showLongBtn = document.getElementById("show-long-form");
+  if (showDailyBtn) {
+    showDailyBtn.onclick = function () {
+      showForm("daily-form-container");
+    };
+  }
+  if (showLongBtn) {
+    showLongBtn.onclick = function () {
+      showForm("long-form-container");
+    };
+  }
+
+  // Close buttons
+  var closeDailyBtn = document.getElementById("close-daily-form");
+  var closeLongBtn = document.getElementById("close-long-form");
+  if (closeDailyBtn) {
+    closeDailyBtn.onclick = function () {
+      hideForm("daily-form-container");
+    };
+  }
+  if (closeLongBtn) {
+    closeLongBtn.onclick = function () {
+      hideForm("long-form-container");
+    };
+  }
 });

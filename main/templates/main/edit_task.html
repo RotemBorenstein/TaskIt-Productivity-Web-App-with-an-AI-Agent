@@ -7,6 +7,7 @@
     <h2>Edit Task</h2>
     <form action="{% url 'main:edit_task' task.id %}" method="post" class="edit-task-form">
       {% csrf_token %}
+        <button type="button" class="close-form-btn" onclick="window.location.href='{% url 'main:tasks' %}'" title="Close">&times;</button>
       <div>
         {{ form.title.label_tag }}<br>
         {{ form.title }}
@@ -20,7 +21,7 @@
         {{ form.task_type }}
       </div>
       <button type="submit">Save Changes</button>
-      <a href="{% url 'main:tasks' %}">Cancel</a>
+        <button type="button"  onclick="window.location.href='{% url 'main:tasks' %}'" > X</button>
     </form>
   </section>
 {% endblock %}

@@ -55,11 +55,23 @@ def tasks_view(request):
         is_completed=False,
     ).order_by("created_at")
 
-    form = TaskForm()
+    daily_form_data = request.session.pop('daily_form_data', None)
+    if daily_form_data:
+        daily_form = TaskForm(daily_form_data, prefix='daily')
+    else:
+        daily_form = TaskForm(prefix='daily')
+
+    long_form_data = request.session.pop('long_form_data', None)
+    if long_form_data:
+        long_form = TaskForm(long_form_data, prefix='long')
+    else:
+        long_form = TaskForm(prefix='long')
+
     return render(request, "main/tasks.html", {
         "daily_tasks": daily_tasks,
         "long_tasks": long_tasks,
-        "form": form,
+        "daily_form": daily_form,
+        "long_form": long_form,
     })
 
 
@@ -72,16 +84,28 @@ def create_task(request):
     if request.method != "POST":
         return redirect(reverse("main:tasks"))
 
-    form = TaskForm(request.POST)
+    task_type = request.POST.get("task_type")
+    if task_type not in ["daily", "long_term"]:
+        messages.error(request, "Invalid task type")
+        return redirect(reverse("main:tasks"))
+
+    prefix = "daily" if task_type == "daily" else "long"
+    form = TaskForm(request.POST, prefix=prefix)
     if form.is_valid():
         new_task = form.save(commit=False)
         new_task.user = request.user
+        new_task.task_type = task_type
         new_task.save()
-        messages.success(request, "Task added successfully.")
+        messages.success(request, "Task added successfully")
     else:
-        messages.error(request, "Please correct the errors below.")
+        # Save only the POST data to the session, NOT the form itself!
+        if task_type == "daily":
+            request.session['daily_form_data'] = request.POST.dict()
+        else:
+            request.session['long_form_data'] = request.POST.dict()
 
     return redirect(reverse("main:tasks"))
+
 
 
 @login_required

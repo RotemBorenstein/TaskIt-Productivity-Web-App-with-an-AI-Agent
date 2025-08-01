@@ -22,6 +22,7 @@ class Task(models.Model):
     completed_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
+
     def __str__(self):
         return f"{self.title} ({self.task_type})"
 

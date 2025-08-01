@@ -1,31 +1,16 @@
-{# main/templates/main/tasks.html #}
 {% extends "main/base.html" %}
 {% block title %}My Tasks{% endblock %}
+{% load static %}
 
 {% block content %}
-  <section class="add-task-section">
-    <h2>Add New Task</h2>
-    <form action="{% url 'main:create_task' %}" method="post" class="add-task-form">
-      {% csrf_token %}
-      <div>
-        {{ form.title.label_tag }}<br>
-        {{ form.title }}
-      </div>
-      <div>
-        {{ form.description.label_tag }}<br>
-        {{ form.description }}
-      </div>
-      <div>
-        {{ form.task_type.label_tag }}<br>
-        {{ form.task_type }}
-      </div>
-      <button type="submit">Add Task</button>
-    </form>
-  </section>
-
   <div class="tasks-container">
+
+    <!-- DAILY TASKS SECTION -->
     <section class="tasks-list daily">
-      <h2>Daily Tasks</h2>
+      <div class="tasks-header">
+        <h2>Daily Tasks</h2>
+        <button type="button" class="add-task-btn" id="show-daily-form" title="Add Daily Task">+</button>
+      </div>
       <ul id="daily-tasks-list">
         {% for task in daily_tasks %}
           <li id="task-{{ task.id }}">
@@ -43,10 +28,36 @@
           <li>No daily tasks. Enjoy your day!</li>
         {% endfor %}
       </ul>
+      <div class="add-task-form-container" id="daily-form-container" {% if not daily_form.errors %}style="display:none"{% endif %}>
+        <form action="{% url 'main:create_task' %}" method="post" class="add-task-form">
+          {% csrf_token %}
+        {% if daily_form.errors %}
+            <div class="form-error">{{ daily_form.errors }}</div>
+        {% endif %}
+          <input type="hidden" name="task_type" value="daily">
+          <div>
+            {{ daily_form.title.label_tag }}
+            {{ daily_form.title }}
+            {% if daily_form.title.errors %}<div class="form-error">{{ daily_form.title.errors }}</div>{% endif %}
+          </div>
+          <div>
+            {{ daily_form.description.label_tag }}
+            {{ daily_form.description }}
+            {% if daily_form.description.errors %}<div class="form-error">{{ daily_form.description.errors }}</div>{% endif %}
+          </div>
+          {% if daily_form.non_field_errors %}<div class="form-error">{{ daily_form.non_field_errors }}</div>{% endif %}
+          <button type="submit">Add Task</button>
+          <button type="button" class="close-form-btn" id="close-daily-form" title="Close">×</button>
+        </form>
+      </div>
     </section>
 
+    <!-- LONG-TERM TASKS SECTION -->
     <section class="tasks-list long-term">
-      <h2>Long-Term Tasks</h2>
+      <div class="tasks-header">
+        <h2>Long-Term Tasks</h2>
+        <button type="button" class="add-task-btn" id="show-long-form" title="Add Long-Term Task">+</button>
+      </div>
       <ul id="long-tasks-list">
         {% for task in long_tasks %}
           <li id="task-{{ task.id }}">
@@ -64,6 +75,26 @@
           <li>No long-term tasks yet.</li>
         {% endfor %}
       </ul>
+      <div class="add-task-form-container" id="long-form-container" {% if not long_form.errors %}style="display:none"{% endif %}>
+        <form action="{% url 'main:create_task' %}" method="post" class="add-task-form">
+          {% csrf_token %}
+          <input type="hidden" name="task_type" value="long_term">
+          <div>
+            {{ long_form.title.label_tag }}
+            {{ long_form.title }}
+            {% if long_form.title.errors %}<div class="form-error">{{ long_form.title.errors }}</div>{% endif %}
+          </div>
+          <div>
+            {{ long_form.description.label_tag }}
+            {{ long_form.description }}
+            {% if long_form.description.errors %}<div class="form-error">{{ long_form.description.errors }}</div>{% endif %}
+          </div>
+          {% if long_form.non_field_errors %}<div class="form-error">{{ long_form.non_field_errors }}</div>{% endif %}
+          <button type="submit">Add Task</button>
+          <button type="button" class="close-form-btn" id="close-long-form" title="Close">×</button>
+        </form>
+      </div>
     </section>
+
   </div>
 {% endblock %}
