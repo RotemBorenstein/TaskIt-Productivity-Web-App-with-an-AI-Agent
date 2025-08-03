@@ -12,22 +12,33 @@
         <button type="button" class="add-task-btn" id="show-daily-form" title="Add Daily Task">+</button>
       </div>
       <ul id="daily-tasks-list">
-        {% for task in daily_tasks %}
-          <li id="task-{{ task.id }}">
-            <label>
-              <input type="checkbox" class="task-checkbox" data-task-id="{{ task.id }}">
-              <span class="task-title">{{ task.title }}</span>
-            </label>
-            {% if task.description %}
-              <div class="task-desc">{{ task.description }}</div>
-            {% endif %}
-            <a href="{% url 'main:edit_task' task.id %}">Edit</a>
-            <a href="{% url 'main:delete_task' task.id %}">Delete</a>
-          </li>
-        {% empty %}
-          <li>No daily tasks. Enjoy your day!</li>
-        {% endfor %}
-      </ul>
+  {% for task in daily_tasks %}
+    <li id="task-{{ task.id }}">
+      <label>
+        <input type="checkbox" class="task-checkbox" data-task-id="{{ task.id }}">
+        <span class="task-title">{{ task.title }}</span>
+      </label>
+
+      {% if task.description %}
+        <div class="task-desc">{{ task.description }}</div>
+      {% endif %}
+    <!-- ANCHOR BUTTON START -->
+      <button class="anchor-btn" data-task-id="{{ task.id }}" aria-label="Toggle anchor">
+        {% if task.is_anchored %}
+          <span class="anchored" title="Anchored">📌</span>
+        {% else %}
+          <span class="not-anchored" title="Click to anchor">📍</span>
+        {% endif %}
+      </button>
+      <!-- ANCHOR BUTTON END -->
+      <a href="{% url 'main:edit_task' task.id %}">Edit</a>
+      <a href="{% url 'main:delete_task' task.id %}">Delete</a>
+    </li>
+  {% empty %}
+    <li>No daily tasks. Enjoy your day!</li>
+  {% endfor %}
+</ul>
+
       <div class="add-task-form-container" id="daily-form-container" {% if not daily_form.errors %}style="display:none"{% endif %}>
         <form action="{% url 'main:create_task' %}" method="post" class="add-task-form">
           {% csrf_token %}
@@ -51,6 +62,58 @@
         </form>
       </div>
     </section>
+
+  <script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll('.anchor-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            let taskId = btn.getAttribute('data-task-id');
+            console.log('Toggling anchor for', taskId);
+
+            fetch(`/tasks/${taskId}/toggle_anchor/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('AJAX response:', data);
+
+                if (data.success) {
+                    // Swap the icon based on new anchor status (no reload needed!)
+                    if (data.anchored) {
+                        btn.innerHTML = '<span class="anchored" title="Anchored">📌</span>';
+                    } else {
+                        btn.innerHTML = '<span class="not-anchored" title="Click to anchor">📍</span>';
+                    }
+                } else {
+                    alert(data.error || 'Failed to toggle anchor. Please try again.');
+                }
+            });
+        });
+    });
+
+    // Helper for getting CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+
 
     <!-- LONG-TERM TASKS SECTION -->
     <section class="tasks-list long-term">

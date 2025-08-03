@@ -21,6 +21,7 @@ class Task(models.Model):
     is_completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    is_anchored = models.BooleanField(default=False)
 
 
     def __str__(self):

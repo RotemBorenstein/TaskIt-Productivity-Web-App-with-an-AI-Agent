@@ -1,15 +1,14 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
-
 from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-
+from .models import Task, DailyTaskCompletion
 from .forms import TaskForm
-from .models import Task
+
 def home(request):
     return render(request, "main/home.html", {})
 
@@ -20,7 +19,7 @@ def signup(request):
             user = form.save()
             # Log the user in immediately after signup:
             auth_login(request, user)
-            return redirect('home')
+            return redirect('main:tasks')
     else:
         form = UserCreationForm()
     return render(request, 'main/signup.html', {'form': form})
@@ -41,6 +40,7 @@ def tasks_view(request):
       - long_tasks: all “long_term” tasks for this user that are active and not completed
       - form: empty TaskForm to add a new task
     """
+    update_is_active_for_daily_tasks(request.user)
     daily_tasks = Task.objects.filter(
         user=request.user,
         task_type="daily",
@@ -126,9 +126,28 @@ def complete_task(request):
     except Task.DoesNotExist:
         return JsonResponse({"success": False, "error": "Task not found."}, status=404)
 
-    task.is_completed = True
-    task.completed_at = timezone.now()
-    task.save()
+    if task.task_type == "long_term":
+        # Mark long-term task as completed
+        task.is_completed = True
+        task.completed_at = timezone.now()
+        task.save()
+    elif task.task_type == "daily":
+        # Mark today's DailyTaskCompletion as completed
+        today = timezone.localdate()
+        # Create or update today's record
+        completion, created = DailyTaskCompletion.objects.get_or_create(
+            task=task,
+            date=today,
+            defaults={"created_at": timezone.now()}
+        )
+        completion.completed = True
+        completion.save()
+        # Set is_active=False for the rest of the day (if that's your UI logic)
+        task.is_active = False
+        task.save()
+    else:
+        return JsonResponse({"success": False, "error": "Unknown task type."}, status=400)
+
     return JsonResponse({"success": True})
 
 
@@ -174,3 +193,29 @@ def delete_task(request, pk):
     return render(request, "main/confirm_delete.html", {
         "task": task,
     })
+
+
+
+# main/utils.py
+
+def update_is_active_for_daily_tasks(user):
+    today = timezone.localdate()
+    anchored_tasks = Task.objects.filter(user=user, task_type="daily", is_anchored=True)
+    done_today = DailyTaskCompletion.objects.filter(
+        task__in=anchored_tasks, date=today
+    ).values_list("task_id", flat=True)
+    # Activate all anchored daily tasks that are not completed today
+    anchored_tasks.exclude(id__in=done_today).update(is_active=True)
+    # Deactivate all anchored daily tasks that are completed today
+    anchored_tasks.filter(id__in=done_today).update(is_active=False)
+
+@login_required
+def toggle_anchor(request, task_id):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST required"}, status=400)
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    if task.task_type != "daily":
+        return JsonResponse({"success": False, "error": "Not a daily task"}, status=400)
+    task.is_anchored = not task.is_anchored
+    task.save(update_fields=["is_anchored"])
+    return JsonResponse({"success": True, "anchored": task.is_anchored})
