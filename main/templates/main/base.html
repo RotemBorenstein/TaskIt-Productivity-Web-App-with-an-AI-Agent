@@ -5,20 +5,30 @@
     <meta charset="UTF-8">
     <title>{% block title %}Task Manager{% endblock %}</title>
     {% load static %}
+
+    {# Load page-specific CSS first (e.g., FullCalendar via extra_head) #}
+    {% block extra_head %}{% endblock %}
+
+    {# Load your site CSS last so it overrides anything above #}
     <link rel="stylesheet" href="{% static 'main/tasks.css' %}">
 </head>
+
 <body>
-    <header>
-        <h1 class="site-title"><a href="{% url 'main:tasks' %}">Task Manager</a></h1>
-        <nav>
-            {% if request.user.is_authenticated %}
-          <span>Hello, {{ request.user.username }}</span>
-          <a href="{% url 'main:logout' %}">Logout</a>
-        {% else %}
-          <a href="{% url 'main:login' %}">Login</a>
-        {% endif %}
-        </nav>
-    </header>
+    <header class="site-header">
+  <h1 class="site-title"><a href="{% url 'main:tasks' %}">Task Manager</a></h1>
+  <nav class="main-nav">
+    <ul>
+      {% if request.user.is_authenticated %}
+        <li><a href="{% url 'main:tasks' %}">Tasks</a></li>
+        <li><a href="{% url 'main:calendar' %}">Calendar</a></li>
+        <li><a href="{% url 'main:logout' %}">Logout</a></li>
+      {% else %}
+        <li><a href="{% url 'main:login' %}">Login</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+</header>
+
 
     {% if messages %}
       <div class="messages">
@@ -33,5 +43,8 @@
     </main>
 
     <script src="{% static 'main/tasks.js' %}"></script>
+
+    {# 👇 allow pages to push extra JS (e.g., FullCalendar JS + page script) #}
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

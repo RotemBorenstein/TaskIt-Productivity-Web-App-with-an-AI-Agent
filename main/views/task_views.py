@@ -1,28 +1,13 @@
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from .models import Task, DailyTaskCompletion
-from .forms import TaskForm
+from ..models import Task, DailyTaskCompletion
+from ..forms import TaskForm
 
-def home(request):
-    return render(request, "main/home.html", {})
+from django.http import JsonResponse
 
-def signup(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            # Log the user in immediately after signup:
-            auth_login(request, user)
-            return redirect('main:tasks')
-    else:
-        form = UserCreationForm()
-    return render(request, 'main/signup.html', {'form': form})
 
 @login_required
 def tasks(request):
@@ -195,9 +180,6 @@ def delete_task(request, pk):
     })
 
 
-
-# main/utils.py
-
 def update_is_active_for_daily_tasks(user):
     today = timezone.localdate()
     anchored_tasks = Task.objects.filter(user=user, task_type="daily", is_anchored=True)
@@ -219,3 +201,5 @@ def toggle_anchor(request, task_id):
     task.is_anchored = not task.is_anchored
     task.save(update_fields=["is_anchored"])
     return JsonResponse({"success": True, "anchored": task.is_anchored})
+
+

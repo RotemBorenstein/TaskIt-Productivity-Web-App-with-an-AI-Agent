@@ -434,3 +434,52 @@ input[type="checkbox"].task-checkbox {
 }
 .anchored { color: orange; font-size: 1em; }
 .not-anchored { color: gray; font-size: 1em; }
+
+
+
+
+
+
+
+/* Header layout and colors */
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #2c3e50;
+  color: #fff;
+}
+.site-title a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+/* Horizontal nav styling */
+.site-header .main-nav ul {
+  list-style: none !important;
+  display: flex !important;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+.site-header .main-nav li {
+  margin: 0;
+  padding: 0;
+}
+.site-header .main-nav a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1rem;
+}
+.site-header .main-nav a:hover {
+  text-decoration: underline;
+}
+.site-header .nav-user {
+  margin-left: 10px;
+  font-style: italic;
+  opacity: 0.9;
+}
