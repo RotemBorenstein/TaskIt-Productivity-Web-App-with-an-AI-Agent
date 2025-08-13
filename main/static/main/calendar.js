@@ -1,3 +1,4 @@
+
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
 
@@ -177,9 +178,9 @@
 
       initialView: "dayGridMonth",
       headerToolbar: {
-        left: "prev,next today addEvent",
+        left: "prev,next",
         center: "title",
-        right: "dayGridMonth,timeGridWeek,timeGridDay"
+        right: "addEvent dayGridMonth,timeGridWeek,timeGridDay"
       },
       customButtons: {
         addEvent: {
@@ -214,6 +215,8 @@
       dateClick: async function (info) {
         const vt = calendar.view ? calendar.view.type : 'dayGridMonth';
         if (vt !== 'dayGridMonth') return;
+        document.querySelectorAll('.fc-daygrid-day').forEach(el => el.classList.remove('fc-day-selected')); // NEW
+        info.dayEl.classList.add('fc-day-selected'); // NEW
         const isoDate = info.dateStr;
         renderDaySkeleton(isoDate);
         try {
