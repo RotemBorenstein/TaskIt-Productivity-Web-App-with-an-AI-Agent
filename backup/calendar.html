@@ -1,0 +1,81 @@
+{% extends "main/base.html" %}
+{% load static %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block extra_head %}
+  <!-- FullCalendar styles -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'main/calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+  <div class="calendar-page">
+
+    <div class="calendar-left">
+      <div id="calendar"></div>
+    </div>
+
+    <!-- Right‑side day tasks panel -->
+    <aside id="day-panel" class="day-panel hidden">
+      <div class="day-panel-header">
+        <h2 id="day-panel-title">Selected day</h2>
+        <button id="day-panel-close" title="Close">×</button>
+      </div>
+      <div class="day-panel-body">
+        <h3>Daily tasks</h3>
+        <ul id="daily-list"></ul>
+
+        <h3>Long‑term tasks</h3>
+        <ul id="longterm-list"></ul>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Single Event Create Modal (kept outside the grid so it never shifts layout) -->
+  <div id="event-modal-backdrop" class="hidden"></div>
+  <div id="event-modal" class="hidden">
+    <div class="modal-header">
+      <h3>New Event</h3>
+      <button id="event-modal-close" aria-label="Close">✕</button>
+    </div>
+
+    <form id="event-form">
+      <label>Title
+        <input id="ev-title" type="text" required />
+      </label>
+
+      <label>Description
+        <textarea id="ev-desc" rows="2"></textarea>
+      </label>
+
+      <label>Start
+        <input id="ev-start" type="datetime-local" required />
+      </label>
+
+      <label>End
+        <input id="ev-end" type="datetime-local" required />
+      </label>
+
+      <label class="checkbox-label">
+        <input id="ev-all-day" type="checkbox" />
+        All day
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" id="event-cancel">Cancel</button>
+        <button type="submit" class="primary">Create</button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+  <!-- FullCalendar script -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <!-- Explicit interaction plugin to guarantee drag selection works -->
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/interaction@6.1.15/index.global.min.js"></script>
+  <script src="{% static 'main/calendar.js' %}"></script>
+{% endblock %}

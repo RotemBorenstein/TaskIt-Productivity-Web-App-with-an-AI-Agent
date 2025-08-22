@@ -16,7 +16,7 @@
       <div id="calendar"></div>
     </div>
 
-    <!-- Right‑side day tasks panel -->
+    <!-- Right-side day tasks panel -->
     <aside id="day-panel" class="day-panel hidden">
       <div class="day-panel-header">
         <h2 id="day-panel-title">Selected day</h2>
@@ -26,22 +26,25 @@
         <h3>Daily tasks</h3>
         <ul id="daily-list"></ul>
 
-        <h3>Long‑term tasks</h3>
+        <h3>Long-term tasks</h3>
         <ul id="longterm-list"></ul>
       </div>
     </aside>
 
   </div>
 
-  <!-- Single Event Create Modal (kept outside the grid so it never shifts layout) -->
+  <!-- Single Create/Edit Modal -->
   <div id="event-modal-backdrop" class="hidden"></div>
   <div id="event-modal" class="hidden">
     <div class="modal-header">
-      <h3>New Event</h3>
+      <h3 id="event-modal-title">New Event</h3>
       <button id="event-modal-close" aria-label="Close">✕</button>
     </div>
 
     <form id="event-form">
+      <!-- holds the id when editing -->
+      <input id="ev-id" type="hidden" />
+
       <label>Title
         <input id="ev-title" type="text" required />
       </label>
@@ -64,8 +67,16 @@
       </label>
 
       <div class="modal-actions">
-        <button type="button" id="event-cancel">Cancel</button>
-        <button type="submit" class="primary">Create</button>
+        <div class="actions-left">
+          <!-- icon-only trash button (hidden in create mode) -->
+          <button type="button" id="event-delete" class="icon danger" title="Delete event" aria-label="Delete event">
+            <span class="icon-emoji" aria-hidden="true">🗑</span>
+          </button>
+        </div>
+        <div class="actions-right">
+          <button type="button" id="event-cancel">Cancel</button>
+          <button type="submit" class="primary" id="event-submit">Create</button>
+        </div>
       </div>
     </form>
   </div>

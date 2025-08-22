@@ -6,7 +6,8 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.db import models
 from datetime import date as _date
 from django.utils.dateparse import parse_datetime
-
+from django.utils import timezone
+from datetime import datetime, time
 
 @login_required
 def calendar_view(request):
@@ -80,7 +81,7 @@ def tasks_of_day(request):
     if not d:
         return HttpResponseBadRequest("Invalid or missing date")
 
-    # Optional: hide all tasks for future dates
+    # hide all tasks for future dates
     if d > _date.today():
         return JsonResponse({"date": d.isoformat(), "daily": [], "long_term": []})
 
@@ -103,8 +104,7 @@ def tasks_of_day(request):
     # Which of those were completed ON d?
     completed_daily_ids = set(
         DailyTaskCompletion.objects
-        .filter(task__in=daily_qs, date=d)
-        .values_list("task_id", flat=True)
+        .filter(task__in=daily_qs, date=d).values_list("task_id", flat=True)
     )
 
     daily = [
@@ -189,55 +189,6 @@ def toggle_long_term_completion(request, task_id: int):
             task.completed_at = None
             task.save(update_fields=["completed_at"])
         return JsonResponse({"ok": True, "completed_at": None})
-
-
-# views.py
-from django.utils import timezone
-from datetime import datetime, time
-
-@login_required
-@require_http_methods(["POST", "DELETE"])
-def daily_completions(request):
-    """
-    POST: mark completed for given day
-    DELETE: unmark for given day
-    expects: task_id, date=YYYY-MM-DD (form-encoded or querystring)
-    """
-    task_id = request.POST.get("task_id") or request.GET.get("task_id")
-    d_str   = request.POST.get("date") or request.GET.get("date")
-    d = _parse_date(d_str)
-    if not (task_id and d):
-        return HttpResponseBadRequest("task_id and date required")
-
-    try:
-        t = Task.objects.get(id=task_id, user=request.user, task_type="daily")
-    except Task.DoesNotExist:
-        return HttpResponseBadRequest("Invalid task")
-
-    if request.method == "POST":
-        # create or ensure the per-day completion exists
-        DailyTaskCompletion.objects.get_or_create(task=t, date=d)
-
-        # If non-anchored, set an overall completion_at on that day
-        if not t.anchored:
-            # set completed_at to end-of-day for consistency
-            dt = timezone.make_aware(datetime.combine(d, time(23, 59, 59)))
-            t.completed_at = dt
-            t.save(update_fields=["completed_at"])
-
-        return JsonResponse({"ok": True})
-
-    # DELETE -> remove per-day completion
-    DailyTaskCompletion.objects.filter(task=t, date=d).delete()
-
-    # If non-anchored and we had completed_at exactly this day, clear it
-    if not t.anchored and t.completed_at and t.completed_at.date() == d:
-        t.completed_at = None
-        t.save(update_fields=["completed_at"])
-
-    return JsonResponse({"ok": True})
-
-
 
 
 

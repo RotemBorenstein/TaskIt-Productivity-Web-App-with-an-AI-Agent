@@ -26,4 +26,5 @@ urlpatterns = [
     #path("events/<int:pk>/delete/", event_views.event_delete, name="delete"),
     path("api/calendar/", calendar_views.calendar_feed, name="calendar_feed"),
     path("api/events/", event_views.api_event_create, name="api_event_create"),
+    path("api/events/<int:pk>/", event_views.api_event_detail, name="api_event_detail"),
 ]

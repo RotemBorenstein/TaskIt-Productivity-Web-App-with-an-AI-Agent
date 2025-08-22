@@ -2,24 +2,17 @@
   display: grid;
   grid-template-columns: 1fr 340px;
   gap: 16px;
-  min-height: calc(100vh - 140px); /* adjust to your header/footer */
-  align-items: start;               /* make right panel align with top */
+  min-height: calc(100vh - 140px);
+  align-items: start;
 }
 
-/* ---- Theme tokens used by calendar.css ---- */
+/* ---- Theme tokens ---- */
 :root {
-  /* Panel/card background */
   --surface: #ffffff;
-
-  /* Today's cell background in FullCalendar (we also use it as a fallback elsewhere) */
   --fc-today-bg: #fff8d1;
 }
 
-
-
-
-
-
+/* Calendar card */
 #calendar {
   background: var(--surface, #fff);
   border-radius: 12px;
@@ -51,7 +44,6 @@
 #daily-list li, #longterm-list li { display: flex; align-items: flex-start; margin-bottom: 4px; }
 #daily-list label, #longterm-list label { display: inline-flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; line-height: 1.4; cursor: pointer; }
 
-/* Hide/show helper */
 .hidden { display: none; }
 
 /* Backdrop */
@@ -59,10 +51,10 @@
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 9998;    /* higher than FullCalendar */
+  z-index: 9998;
 }
 
-/* Modal container */
+/* Modal */
 #event-modal {
   position: fixed;
   top: 50%;
@@ -73,16 +65,14 @@
   border-radius: 8px;
   width: 400px;
   max-width: 95vw;
-  z-index: 9999;    /* above backdrop */
+  z-index: 9999;
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
-
-/* Modal header */
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .modal-header h3 { margin: 0; }
 #event-modal-close { background: none; border: none; font-size: 20px; cursor: pointer; }
 
-/* Form styles */
+/* Form */
 #event-form { display: flex; flex-direction: column; gap: 8px; }
 #event-form label { display: flex; flex-direction: column; font-size: 14px; gap: 4px; }
 #event-form input[type="text"],
@@ -90,10 +80,22 @@
 #event-form textarea { padding: 6px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
 .checkbox-label { flex-direction: row !important; align-items: center; gap: 6px; }
 
-/* Buttons */
-.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
-.modal-actions button { padding: 6px 12px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; }
+/* Modal action bar: left (delete) | right (cancel, primary) */
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+.actions-right { display: flex; gap: 8px; }
+.modal-actions button { padding: 6px 12px; border-radius: 6px; border: 1px solid #ccc; cursor: pointer; }
 .modal-actions .primary { background-color: #007bff; color: white; border: none; }
+
+/* Icon-only delete */
+.icon { width: 36px; height: 36px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
+.icon-emoji { font-size: 18px; line-height: 1; }
+.icon.danger { background: #ffe9e9; border: 1px solid #f2b8b8; color: #b91c1c; }
+.icon.danger:hover { filter: brightness(.98); }
 
 /* Header layout: left | center | right */
 .fc .fc-toolbar {
@@ -102,47 +104,16 @@
   align-items: center;
   gap: 12px;
 }
+.fc .fc-toolbar-chunk:nth-child(1) { justify-self: start; display: flex; gap: 8px; }
+.fc .fc-toolbar-chunk:nth-child(2) { justify-self: center; text-align: center; }
+.fc .fc-toolbar-chunk:nth-child(3) { justify-self: end; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
-/* Keep each chunk aligned nicely */
-.fc .fc-toolbar-chunk:nth-child(1) { /* left */
-  justify-self: start;
-  display: flex;
-  gap: 8px;
-}
-.fc .fc-toolbar-chunk:nth-child(2) { /* center (title) */
-  justify-self: center;
-  text-align: center;
-}
-.fc .fc-toolbar-chunk:nth-child(3) { /* right */
-  justify-self: end;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;            /* allow the right buttons to wrap if needed */
-  justify-content: flex-end;
-}
-
-/* Make the title prominent */
-.fc .fc-toolbar-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: .2px;
-}
-
-/* Button sizing */
-.fc .fc-button {
-  border-radius: 8px;
-  padding: 6px 10px;
-}
-
-/* Make "New Event" stand out a bit */
-.fc .fc-addEvent-button {
-  background: #007bff;
-  color: #fff;
-  border: none;
-}
+.fc .fc-toolbar-title { font-size: 1.6rem; font-weight: 700; letter-spacing: .2px; }
+.fc .fc-button { border-radius: 8px; padding: 6px 10px; }
+.fc .fc-addEvent-button { background: #007bff; color: #fff; border: none; }
 .fc .fc-addEvent-button:hover { filter: brightness(0.95); }
 
-/* Responsive: on narrow screens, keep title full-width and centered */
+/* Responsive toolbar */
 @media (max-width: 720px) {
   .fc .fc-toolbar {
     grid-template-columns: 1fr 1fr;
@@ -155,16 +126,19 @@
   .fc .fc-toolbar-chunk:nth-child(3) { grid-area: right; }
 }
 
-/*NEW
 /* Selected day highlight (month view) */
-.fc .fc-daygrid-day.fc-day-selected .fc-daygrid-day-frame {
-  background: #eaf3ff;            /* soft blue */
+.fc .fc-daygrid-day.fc-day-selected .fc-daygrid-day-frame { background: #eaf3ff; }
+.fc .fc-daygrid-day.fc-day-today.fc-day-selected .fc-daygrid-day-frame { background: var(--fc-today-bg, #fff8d1); }
+
+/* ==== Layout tweaks to hug navbar & fill viewport ==== */
+:root { --nav-h: 64px; --extra-vspace: 28px; }
+.calendar-page { max-width: 1200px; margin: 4px auto !important; padding: 0 12px; grid-template-columns: minmax(720px, 1fr) 360px; gap: 20px; }
+.fc { height: calc(100vh - var(--nav-h) - var(--extra-vspace)) !important; min-height: 0 !important; max-height: none !important; }
+.day-panel { position: sticky; top: calc(var(--nav-h) + 8px) !important; }
+#calendar { padding: 8px; }
+
+@media (max-width: 1100px) {
+  .calendar-page { max-width: 900px; margin: 2px auto !important; grid-template-columns: 1fr; }
+  .day-panel { position: static; margin-top: 12px; }
+  .fc { height: calc(100vh - var(--nav-h) - 22px) !important; }
 }
-
-
-
-/* Keep today's default highlight even if it's selected */
-.fc .fc-daygrid-day.fc-day-today.fc-day-selected .fc-daygrid-day-frame {
-  background: var(--fc-today-bg, #fff8d1);
-}
-

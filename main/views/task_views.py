@@ -127,7 +127,7 @@ def complete_task(request):
         )
         completion.completed = True
         completion.save()
-        # Set is_active=False for the rest of the day (if that's your UI logic)
+        # Set is_active=False for the rest of the day
         task.is_active = False
         task.save()
     else:
