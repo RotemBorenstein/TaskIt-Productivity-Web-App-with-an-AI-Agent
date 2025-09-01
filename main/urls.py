@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as django_auth_views
 from . import views
-from .views import auth_views, task_views, calendar_views, event_views
+from .views import auth_views, task_views, calendar_views, event_views, stats_views
 app_name = "main"
 
 urlpatterns = [
@@ -17,14 +17,15 @@ urlpatterns = [
     path('tasks/<int:task_id>/toggle_anchor/', task_views.toggle_anchor, name='toggle_anchor'),
     path("calendar/", calendar_views.calendar_view, name="calendar"),
     path("api/calendar/", calendar_views.calendar_events, name="calendar_events"),
-    # Day panel
     path("api/tasks/day/", calendar_views.tasks_of_day, name="tasks_of_day"),
     path("api/daily-completions/", calendar_views.toggle_daily_completion, name="toggle_daily_completion"),
     path("api/tasks/<int:task_id>/complete/", calendar_views.toggle_long_term_completion, name="toggle_long_term_completion"),
-    #path("events/new/", event_views.event_create, name="new"),
-    #path("events/<int:pk>/edit/", event_views.event_edit, name="edit"),
-    #path("events/<int:pk>/delete/", event_views.event_delete, name="delete"),
     path("api/calendar/", calendar_views.calendar_feed, name="calendar_feed"),
     path("api/events/", event_views.api_event_create, name="api_event_create"),
     path("api/events/<int:pk>/", event_views.api_event_detail, name="api_event_detail"),
+    path("stats/", stats_views.stats_page, name="stats_page"),
+    path("api/stats/completion-rate/", stats_views.api_completion_rate),
+    path("api/stats/completed_tasks/", stats_views.api_completed_daily_tasks_count),
+    path("api/stats/api_per_task_completion_rate/", stats_views.api_per_task_completion_rate)
+
 ]

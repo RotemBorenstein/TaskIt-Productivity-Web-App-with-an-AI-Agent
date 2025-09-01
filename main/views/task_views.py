@@ -14,9 +14,6 @@ def tasks(request):
     return render(request, "main/tasks.html", {})
 
 
-# main/views.py
-
-
 @login_required
 def tasks_view(request):
     """
@@ -81,6 +78,10 @@ def create_task(request):
         new_task.user = request.user
         new_task.task_type = task_type
         new_task.save()
+        if new_task.task_type == 'daily':
+            DailyTaskCompletion.objects.get_or_create(
+                task=new_task, date=timezone.localdate()
+            )
         messages.success(request, "Task added successfully")
     else:
         # Save only the POST data to the session, NOT the form itself!
@@ -119,15 +120,16 @@ def complete_task(request):
     elif task.task_type == "daily":
         # Mark today's DailyTaskCompletion as completed
         today = timezone.localdate()
-        # Create or update today's record
-        completion, created = DailyTaskCompletion.objects.get_or_create(
-            task=task,
-            date=today,
-            defaults={"created_at": timezone.now()}
-        )
-        completion.completed = True
-        completion.save()
-        # Set is_active=False for the rest of the day
+        # update today's record
+        try:
+            completion = DailyTaskCompletion.objects.get(task=task, date=today)
+        except DailyTaskCompletion.DoesNotExist:
+            return JsonResponse({"success": False, "error": "No daily completion record found."}, status=404)
+
+        if not completion.completed:
+            completion.completed = True
+            completion.save(update_fields=['completed'])
+
         task.is_active = False
         task.save()
     else:
@@ -182,14 +184,27 @@ def delete_task(request, pk):
 
 def update_is_active_for_daily_tasks(user):
     today = timezone.localdate()
+    now = timezone.now()
     anchored_tasks = Task.objects.filter(user=user, task_type="daily", is_anchored=True)
+
+    for task in anchored_tasks:
+        DailyTaskCompletion.objects.get_or_create(
+            task=task,
+            date=today,
+            defaults={"created_at": now, "completed": False}
+        )
+
     done_today = DailyTaskCompletion.objects.filter(
-        task__in=anchored_tasks, date=today
+        task__in=anchored_tasks, date=today, completed=True
     ).values_list("task_id", flat=True)
     # Activate all anchored daily tasks that are not completed today
     anchored_tasks.exclude(id__in=done_today).update(is_active=True)
     # Deactivate all anchored daily tasks that are completed today
     anchored_tasks.filter(id__in=done_today).update(is_active=False)
+
+
+
+
 
 @login_required
 def toggle_anchor(request, task_id):
@@ -200,6 +215,8 @@ def toggle_anchor(request, task_id):
         return JsonResponse({"success": False, "error": "Not a daily task"}, status=400)
     task.is_anchored = not task.is_anchored
     task.save(update_fields=["is_anchored"])
+    if task.is_anchored:
+        DailyTaskCompletion.objects.get_or_create(task=task, date=timezone.localdate())
     return JsonResponse({"success": True, "anchored": task.is_anchored})
 
 

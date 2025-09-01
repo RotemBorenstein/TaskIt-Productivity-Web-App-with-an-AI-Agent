@@ -2,7 +2,7 @@ from django.shortcuts import render
 from ..models import Task, DailyTaskCompletion, Event
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, QueryDict
 from django.db import models
 from datetime import date as _date
 from django.utils.dateparse import parse_datetime
@@ -104,7 +104,7 @@ def tasks_of_day(request):
     # Which of those were completed ON d?
     completed_daily_ids = set(
         DailyTaskCompletion.objects
-        .filter(task__in=daily_qs, date=d).values_list("task_id", flat=True)
+        .filter(task__in=daily_qs, date=d, completed=True).values_list("task_id", flat=True)
     )
 
     daily = [
@@ -112,7 +112,7 @@ def tasks_of_day(request):
         for t in daily_qs
     ]
 
-    # ---------- LONG-TERM (unchanged from your latest rule) ----------
+    # ---------- LONG-TERM ----------
     lt_qs = Task.objects.filter(
         user=request.user, task_type="long_term", created_at__date__lte=d
     ).filter(models.Q(completed_at__isnull=True) | models.Q(completed_at__date__gte=d))
@@ -140,8 +140,13 @@ def toggle_daily_completion(request):
     DELETE -> unmark completion for that date
     Body (JSON or form): task_id, date=YYYY-MM-DD
     """
-    task_id = request.POST.get("task_id") or request.GET.get("task_id")
-    date_str = request.POST.get("date") or request.GET.get("date")
+    if request.method == "DELETE":
+        data = QueryDict(request.body)  # parse x-www-form-urlencoded body
+        task_id = data.get("task_id") or request.GET.get("task_id")
+        date_str = data.get("date") or request.GET.get("date")
+    else:  # POST
+        task_id = request.POST.get("task_id") or request.GET.get("task_id")
+        date_str = request.POST.get("date") or request.GET.get("date")
     d = _parse_date(date_str)
     if not task_id or not d:
         return HttpResponseBadRequest("task_id and date are required")
@@ -152,11 +157,15 @@ def toggle_daily_completion(request):
         return HttpResponseBadRequest("Task not found or not daily")
 
     if request.method == "POST":
-        DailyTaskCompletion.objects.get_or_create(task=task, date=d)
+        obj, _ = DailyTaskCompletion.objects.get_or_create(task=task, date=d)
+        if not obj.completed:
+            obj.completed = True
+            obj.save(update_fields=["completed"])
         return JsonResponse({"ok": True, "completed": True})
     else:  # DELETE
-        DailyTaskCompletion.objects.filter(task=task, date=d).delete()
+        DailyTaskCompletion.objects.filter(task=task, date=d).update(completed=False)
         return JsonResponse({"ok": True, "completed": False})
+
 
 @require_http_methods(["PATCH", "DELETE"])
 @login_required

@@ -35,6 +35,8 @@ class DailyTaskCompletion(models.Model):
     )
     date = models.DateField(default=timezone.localdate)
     created_at = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default = False)
+
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['task', 'date'], name='unique_task_date')]

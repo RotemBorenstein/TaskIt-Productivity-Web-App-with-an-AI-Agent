@@ -1,0 +1,66 @@
+{% extends "main/base.html" %}
+{% load static %}
+
+{% block title %}Stats{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'main/stats.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+  <h1 class="stats-title">My Stats</h1>
+
+
+  <!-- Granularity controls -->
+<div class="granularity-controls">
+  <label>
+    <input type="radio" name="granularity" value="day" checked>
+    <span>Days</span>
+  </label>
+  <label>
+    <input type="radio" name="granularity" value="week">
+    <span>Weeks</span>
+  </label>
+  <label>
+    <input type="radio" name="granularity" value="month">
+    <span>Months</span>
+  </label>
+</div>
+
+  <!-- daily tasks completion chart -->
+  <div class="chart-container">
+    <canvas id="completionRateChart"
+            aria-label="Completion rate chart" role="img"></canvas>
+  </div>
+
+      <!-- Most completed tasks chart -->
+  <div class="chart-container">
+    <canvas id="completedTasksChart"
+            aria-label="Most completed tasks chart" role="img"></canvas>
+  </div>
+
+  <!-- Granularity controls 2 -->
+<div class="granularity-controls">
+      <label>
+    <input type="radio" name="granularityPerTask" value="count" checked>
+    <span>Count</span>
+  </label>
+  <label>
+    <input type="radio" name="granularityPerTask" value="percentage" >
+    <span>Percentage</span>
+  </label>
+
+</div>
+
+  <!-- per task completion chart -->
+  <div class="chart-container">
+    <canvas id="perTaskCompletionChart"
+            aria-label="Per task completion chart" role="img"></canvas>
+  </div>
+</div>
+
+<!-- Scripts at the end -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{% static 'main/stats.js' %}"></script>
+{% endblock %}

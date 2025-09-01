@@ -15,12 +15,13 @@
 
 <body>
     <header class="site-header">
-  <h1 class="site-title"><a href="{% url 'main:tasks' %}">Task Manager</a></h1>
+  <h1 class="site-title"><a href="{% url 'main:tasks' %}">TaskIt</a></h1>
   <nav class="main-nav">
     <ul>
       {% if request.user.is_authenticated %}
         <li><a href="{% url 'main:tasks' %}">Tasks</a></li>
         <li><a href="{% url 'main:calendar' %}">Calendar</a></li>
+        <li><a href="{% url 'main:stats_page' %}">My Stats</a></li>
         <li><a href="{% url 'main:logout' %}">Logout</a></li>
       {% else %}
         <li><a href="{% url 'main:login' %}">Login</a></li>
