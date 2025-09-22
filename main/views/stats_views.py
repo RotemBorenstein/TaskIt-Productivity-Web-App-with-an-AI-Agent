@@ -23,7 +23,7 @@ def api_completion_rate(request):
     Completion = completed by now (uses boolean `completed`)
     """
     granularity = request.GET.get("granularity", "day").lower()
-    today = timezone.localdate()  # uses your Django TIME_ZONE (Asia/Jerusalem)
+    today = timezone.localdate()
 
     if granularity == "month":
         current_start = today.replace(day=1)

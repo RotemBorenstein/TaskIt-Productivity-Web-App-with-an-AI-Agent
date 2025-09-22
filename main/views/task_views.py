@@ -121,14 +121,11 @@ def complete_task(request):
         # Mark today's DailyTaskCompletion as completed
         today = timezone.localdate()
         # update today's record
-        try:
-            completion = DailyTaskCompletion.objects.get(task=task, date=today)
-        except DailyTaskCompletion.DoesNotExist:
-            return JsonResponse({"success": False, "error": "No daily completion record found."}, status=404)
-
-        if not completion.completed:
-            completion.completed = True
-            completion.save(update_fields=['completed'])
+        DailyTaskCompletion.objects.update_or_create(
+            task=task,
+            date=today,
+            defaults={"completed": True},
+        )
 
         task.is_active = False
         task.save()

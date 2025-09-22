@@ -87,24 +87,41 @@ def tasks_of_day(request):
 
     # ---------- DAILY ----------
     # Base: user's daily tasks created on/before d and active
-    daily_base = Task.objects.filter(
+    base_old = DailyTaskCompletion.objects.filter(
+        task__user=request.user,
+        date__lt=d,
+        task__is_active=True
+    ).values_list("task_id", flat=True)
+
+    to_remove = DailyTaskCompletion.objects.filter(
+        task__user=request.user,
+        date__lt=d,
+        completed=True
+    ).values_list("task_id", flat=True)
+
+    updated_old = [id for id in base_old if id not in to_remove]
+
+    today = DailyTaskCompletion.objects.filter(
+        task__user=request.user,
+        date=d
+    ).values_list("task_id", flat=True)
+
+    anchored_ids = Task.objects.filter(
         user=request.user,
         task_type="daily",
         is_active=True,
+        is_anchored=True,
         created_at__date__lte=d,
-    )
+    ).values_list("id", flat=True)
 
-    # Include if anchored OR (not completed yet by d)
-    daily_qs = daily_base.filter(
-        models.Q(is_anchored=True) |
-        models.Q(completed_at__isnull=True) |
-        models.Q(completed_at__date__gte=d)
-    )
+    daily_ids = set(updated_old) | set(today) | set(anchored_ids)
+    daily_qs = Task.objects.filter(id__in=daily_ids)
 
-    # Which of those were completed ON d?
+
     completed_daily_ids = set(
         DailyTaskCompletion.objects
-        .filter(task__in=daily_qs, date=d, completed=True).values_list("task_id", flat=True)
+        .filter(task__in=daily_qs, date=d, completed=True)
+        .values_list("task_id", flat=True)
     )
 
     daily = [
@@ -160,10 +177,12 @@ def toggle_daily_completion(request):
         obj, _ = DailyTaskCompletion.objects.get_or_create(task=task, date=d)
         if not obj.completed:
             obj.completed = True
-            obj.save(update_fields=["completed"])
+            #obj.task.is_active = False
+            obj.save()
         return JsonResponse({"ok": True, "completed": True})
     else:  # DELETE
         DailyTaskCompletion.objects.filter(task=task, date=d).update(completed=False)
+        task.save()
         return JsonResponse({"ok": True, "completed": False})
 
 
@@ -189,7 +208,7 @@ def toggle_long_term_completion(request, task_id: int):
             dt = timezone.make_aware(datetime(d.year, d.month, d.day))
         else:
             dt = timezone.now()
-        # If your model lacks completed_at, add it; otherwise this line will error.
+
         task.completed_at = dt
         task.save(update_fields=["completed_at"])
         return JsonResponse({"ok": True, "completed_at": task.completed_at.isoformat()})
