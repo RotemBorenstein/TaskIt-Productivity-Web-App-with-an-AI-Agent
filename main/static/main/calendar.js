@@ -27,28 +27,44 @@
   let mode = "create";           // "create" | "edit"
   let currentFcEvent = null;     // FullCalendar EventApi when editing
 
-  // Helpers for datetime-local
-/*function toLocalInputValue(date) {
-  const d = (date instanceof Date) ? date : new Date(date);
-  if (isNaN(d)) return "";
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
-}
-*/
+
+
 function toLocalInputValue(date) {
-  if (!(date instanceof Date)) date = new Date(date);
-  if (isNaN(date)) return "";
-  return date.toISOString().slice(0, 16);
+if (!(date instanceof Date)) date = new Date(date);
+if (isNaN(date)) return "";
+const pad = n => String(n).padStart(2, "0");
+const y = date.getFullYear();
+const m = pad(date.getMonth() + 1);
+const d = pad(date.getDate());
+const hh = pad(date.getHours());
+const mm = pad(date.getMinutes());
+// local-naive string for <input type="datetime-local">
+return `${y}-${m}-${d}T${hh}:${mm}`;
 }
 
 
 
-
+function isoToLocalDatetimeInput(isoLike) {
+  // Works for: 2025-09-29T12:00, 2025-09-29T12:00:00, 2025-09-29T12:00:00+03:00, 2025-09-29T09:00:00Z
+  if (typeof isoLike === "string") {
+    const m = isoLike.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/);
+    if (m) return m[1]; // keep wall HH:MM exactly as the calendar shows
+  }
+  // fallback for Date or anything else
+  return toLocalInputValue(isoLike);
+}
 
 function setInputValueFromAny(inputEl, valueAny) {
-  const d = (valueAny instanceof Date) ? valueAny : new Date(valueAny);
-  inputEl.value = toLocalInputValue(d);
+  if (typeof valueAny === "string") {
+    inputEl.value = isoToLocalDatetimeInput(valueAny);
+  } else {
+    const d = (valueAny instanceof Date) ? valueAny : new Date(valueAny);
+    inputEl.value = toLocalInputValue(d);
+  }
 }
+
+
+
 
 
   function openModal(initial, nextMode = "create", fcEvent = null) {
@@ -92,6 +108,7 @@ function setInputValueFromAny(inputEl, valueAny) {
       end: endIn.value,
       allDay: allDayIn.checked,
     };
+    console.log("CREATE sending:", payload);
     const r = await fetch("/api/events/", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...CSRF() },
@@ -103,6 +120,8 @@ function setInputValueFromAny(inputEl, valueAny) {
   }
 
   async function patchEvent(id, partial) {
+    console.log("PATCH sending start:", partial.start, "end:", partial.end);
+
     const r = await fetch(`/api/events/${id}/`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...CSRF() },
@@ -235,7 +254,6 @@ function setInputValueFromAny(inputEl, valueAny) {
       },
       firstDay: 0,
       timeZone: "Asia/Jerusalem",
-
       selectable: true,
       selectMirror: true,
       selectMinDistance: 2,
@@ -245,7 +263,7 @@ function setInputValueFromAny(inputEl, valueAny) {
         return (vt === 'timeGridDay' || vt === 'timeGridWeek') && selectInfo.start < selectInfo.end;
       },
       select: function(info) {
-        openModal({ start: info.start, end: info.end, allDay: false }, "create");
+        openModal({ start: info.startStr, end: info.endStr, allDay: false }, "create");
       },
 
       // Make events editable
@@ -267,8 +285,8 @@ function setInputValueFromAny(inputEl, valueAny) {
           id: e.id,
           title: e.title,
           description: e.extendedProps?.description || "",
-          start: e.start,
-          end: e.end || e.start, // ensure an end for the input
+          start: e.startStr,
+          end: e.endStr || e.startStr, // ensure an end for the input
           allDay: e.allDay
         }, "edit", e);
       },
@@ -314,7 +332,7 @@ function setInputValueFromAny(inputEl, valueAny) {
     });
 
     calendar.render();
-
+    window.calendar = calendar;
     // Form submit (create or save edit)
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();

@@ -1,4 +1,4 @@
-{# main/templates/main/base.html #}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,30 +6,109 @@
     <title>{% block title %}Task Manager{% endblock %}</title>
     {% load static %}
 
-    {# Load page-specific CSS first (e.g., FullCalendar via extra_head) #}
     {% block extra_head %}{% endblock %}
-
-    {# Load your site CSS last so it overrides anything above #}
     <link rel="stylesheet" href="{% static 'main/tasks.css' %}">
+
+    <style>
+      /* Assistant widget styles */
+      #assistant-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #4a90e2;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        z-index: 1000;
+      }
+
+      #assistant-chat {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 320px;
+        max-height: 400px;
+        display: none;
+        flex-direction: column;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 1000;
+      }
+
+      #chat-log {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        font-size: 14px;
+      }
+
+      #chat-input-area {
+        display: flex;
+        border-top: 1px solid #ccc;
+      }
+
+      #chat-input {
+        flex: 1;
+        border: none;
+        padding: 8px;
+        font-size: 14px;
+      }
+
+      #chat-send {
+        border: none;
+        background: #4a90e2;
+        color: white;
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+          /* User and assistant message styles */
+    .chat-msg {
+      margin: 5px 0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      max-width: 80%;
+      clear: both;
+    }
+
+    .chat-msg.user {
+      background-color: #f1f1f1;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .chat-msg.assistant {
+      background-color: #e6f2ff;
+      border: 1px solid #cce0ff;
+      align-self: flex-start;
+      margin-right: auto;
+    }
+
+    </style>
 </head>
 
 <body>
     <header class="site-header">
-  <h1 class="site-title"><a href="{% url 'main:tasks' %}">TaskIt</a></h1>
-  <nav class="main-nav">
-    <ul>
-      {% if request.user.is_authenticated %}
-        <li><a href="{% url 'main:tasks' %}">Tasks</a></li>
-        <li><a href="{% url 'main:calendar' %}">Calendar</a></li>
-        <li><a href="{% url 'main:stats_page' %}">My Stats</a></li>
-        <li><a href="{% url 'main:logout' %}">Logout</a></li>
-      {% else %}
-        <li><a href="{% url 'main:login' %}">Login</a></li>
-      {% endif %}
-    </ul>
-  </nav>
-</header>
-
+      <h1 class="site-title"><a href="{% url 'main:tasks' %}">TaskIt</a></h1>
+      <nav class="main-nav">
+        <ul>
+          {% if request.user.is_authenticated %}
+            <li><a href="{% url 'main:tasks' %}">Tasks</a></li>
+            <li><a href="{% url 'main:calendar' %}">Calendar</a></li>
+            <li><a href="{% url 'main:stats_page' %}">My Stats</a></li>
+            <li><a href="{% url 'main:logout' %}">Logout</a></li>
+          {% else %}
+            <li><a href="{% url 'main:login' %}">Login</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </header>
 
     {% if messages %}
       <div class="messages">
@@ -43,9 +122,87 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="{% static 'main/tasks.js' %}"></script>
+    <button id="assistant-toggle">💬</button>
 
-    {# 👇 allow pages to push extra JS (e.g., FullCalendar JS + page script) #}
+    <div id="assistant-chat">
+      <div id="chat-log"></div>
+      <div id="chat-input-area">
+        <input id="chat-input" type="text" placeholder="Ask the assistant...">
+        <button id="chat-send">Send</button>
+      </div>
+    </div>
+
+    <script src="{% static 'main/tasks.js' %}"></script>
     {% block extra_scripts %}{% endblock %}
+
+    <script>
+      const toggleBtn = document.getElementById("assistant-toggle");
+      const chatBox = document.getElementById("assistant-chat");
+      const chatLog = document.getElementById("chat-log");
+      const chatInput = document.getElementById("chat-input");
+      const chatSend = document.getElementById("chat-send");
+
+      toggleBtn.addEventListener("click", () => {
+        chatBox.style.display = chatBox.style.display === "flex" ? "none" : "flex";
+      });
+
+      chatSend.addEventListener("click", sendAgentMessage);
+      chatInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendAgentMessage();
+      });
+
+    function sendAgentMessage() {
+      const input = chatInput.value.trim();
+      if (!input) return;
+
+      chatLog.innerHTML += `<div class="chat-msg user"><b>You:</b> ${input}</div>`;
+      chatInput.value = "";
+
+      fetch("/api/agent/", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": csrftoken
+        },
+        body: "message=" + encodeURIComponent(input)
+      })
+      .then(res => res.json())
+      .then(data => {
+        chatLog.innerHTML += `<div class="chat-msg assistant"><b>Assistant:</b> ${data.reply}</div>`;
+        chatLog.scrollTop = chatLog.scrollHeight;
+        if (typeof window.refreshTasks === "function") {
+            window.refreshTasks();
+        }
+        if (window.calendar) {
+            window.calendar.refetchEvents();
+            window.calendar.render();
+}
+
+
+
+      })
+      .catch(err => {
+        chatLog.innerHTML += `<div class="chat-msg assistant" style="color:red;"><b>Error:</b> ${err}</div>`;
+      });
+    }
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+    const csrftoken = getCookie("csrftoken");
+
+    </script>
 </body>
 </html>

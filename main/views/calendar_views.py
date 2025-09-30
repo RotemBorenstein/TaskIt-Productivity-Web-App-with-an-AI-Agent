@@ -8,6 +8,7 @@ from datetime import date as _date
 from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from datetime import datetime, time
+from zoneinfo import ZoneInfo
 
 @login_required
 def calendar_view(request):
@@ -35,34 +36,6 @@ def _parse_iso_to_aware(s: str):
         return dt
     except Exception:
         return None
-
-@login_required
-def calendar_events(request):
-    # FullCalendar supplies ?start=...&end=... (end is exclusive)
-    start_str = request.GET.get("start")
-    end_str = request.GET.get("end")
-    start_dt = _parse_iso_to_aware(start_str) if start_str else None
-    end_dt = _parse_iso_to_aware(end_str) if end_str else None
-
-    qs = Event.objects.filter(user=request.user)
-    if start_dt and end_dt:
-        # Events overlapping the [start,end) window
-        qs = qs.filter(start_datetime__lt=end_dt, end_datetime__gt=start_dt)
-
-    data = []
-    for ev in qs:
-        start_local = timezone.localtime(ev.start_datetime)
-        end_local = timezone.localtime(ev.end_datetime)
-        data.append({
-            "id": ev.id,
-            "title": ev.title,
-            "start": start_local.isoformat(),  # e.g., 2025-08-10T14:00:00+03:00
-            "end": end_local.isoformat(),
-            "allDay": bool(ev.all_day),
-        })
-    return JsonResponse(data, safe=False)
-
-
 
 
 def _parse_date(date_str):
@@ -224,18 +197,19 @@ def toggle_long_term_completion(request, task_id: int):
 def calendar_feed(request):
     start = parse_datetime(request.GET.get("start", ""))
     end = parse_datetime(request.GET.get("end", ""))
-    if start and timezone.is_naive(start): start = timezone.make_aware(start)
-    if end and timezone.is_naive(end): end = timezone.make_aware(end)
+    IL_TZ = ZoneInfo("Asia/Jerusalem")
+
+    if start and timezone.is_naive(start): start = timezone.make_aware(start, IL_TZ)
+    if end and timezone.is_naive(end): end = timezone.make_aware(end, IL_TZ)
 
     qs = Event.objects.filter(user=request.user)
     if start and end:
         qs = qs.filter(end_datetime__gte=start, start_datetime__lte=end)
-
     events = [{
         "id": ev.id,
         "title": ev.title,
-        "start": ev.start_datetime.isoformat(),
-        "end": ev.end_datetime.isoformat(),
+        "start": ev.start_datetime.astimezone(IL_TZ).isoformat(),
+        "end": ev.end_datetime.astimezone(IL_TZ).isoformat(),
         "allDay": ev.all_day,
     } for ev in qs]
 

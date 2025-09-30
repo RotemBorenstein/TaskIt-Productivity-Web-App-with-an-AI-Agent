@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from ..models import Task, DailyTaskCompletion
 from ..forms import TaskForm
-
+from django.views.decorators.http import require_GET
 from django.http import JsonResponse
 
 
@@ -217,3 +217,22 @@ def toggle_anchor(request, task_id):
     return JsonResponse({"success": True, "anchored": task.is_anchored})
 
 
+
+@login_required
+@require_GET
+def api_tasks_list(request):
+    """
+    Return all active tasks for the current user as JSON.
+    """
+    daily_tasks = Task.objects.filter(
+        user=request.user, task_type="daily", is_active=True, is_completed=False
+    ).order_by("created_at").values("id", "title", "task_type", "is_completed")
+
+    long_tasks = Task.objects.filter(
+        user=request.user, task_type="long_term", is_active=True, is_completed=False
+    ).order_by("created_at").values("id", "title", "task_type", "is_completed")
+
+    return JsonResponse({
+        "daily_tasks": list(daily_tasks),
+        "long_tasks": list(long_tasks),
+    })

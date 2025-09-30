@@ -51,7 +51,7 @@ ENV/
 
 # PyCharm files
 .idea/
-
+.env
 
 # OS files
 .DS_Store

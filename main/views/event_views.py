@@ -8,13 +8,26 @@ from datetime import datetime, time, timedelta
 import json
 from ..models import Event
 from zoneinfo import ZoneInfo
-
+IL_TZ = ZoneInfo("Asia/Jerusalem")
 CALENDAR_URL = "/calendar/"
 
 def _aware(dt):
     if dt and timezone.is_naive(dt):
-        return timezone.make_aware(dt, ZoneInfo("Asia/Jerusalem"))
+        return timezone.make_aware(dt, IL_TZ)
     return dt
+
+def _normalize_incoming_dt(dt):
+    """
+    Interpret incoming datetimes consistently as Asia/Jerusalem wall time.
+    - If naive: assume local (Asia/Jerusalem) and make aware.
+    - If aware: convert to Asia/Jerusalem.
+    """
+    if not dt:
+        return None
+    if timezone.is_naive(dt):
+        return timezone.make_aware(dt, IL_TZ)
+    return dt.astimezone(IL_TZ)
+
 
 # --------- JSON APIs ----------
 
@@ -27,8 +40,10 @@ def api_event_create(request):
         return HttpResponseBadRequest("Invalid JSON")
 
     title = (payload.get("title") or "").strip()
-    start = _aware(parse_datetime(payload.get("start")))
-    end   = _aware(parse_datetime(payload.get("end")))
+    start = _normalize_incoming_dt(parse_datetime(payload.get("start")))
+    end = _normalize_incoming_dt(parse_datetime(payload.get("end")))
+    print("manual start:", start)
+    print("manual end:", end)
     all_day = bool(payload.get("allDay"))
 
     if not title or not start or not end:
@@ -39,8 +54,7 @@ def api_event_create(request):
     # All-day: end is exclusive (FullCalendar convention)
     if all_day and start.date() == end.date():
         end = timezone.make_aware(
-            datetime.combine(end.date(), datetime.min.time())
-        ) + timedelta(days=1)
+            datetime.combine(end.date(), time.min), IL_TZ) + timedelta(days=1)
 
     ev = Event.objects.create(
         user=request.user,
@@ -88,8 +102,8 @@ def api_event_detail(request, pk):
     # Current values as defaults
     title = (payload.get("title").strip() if isinstance(payload.get("title"), str) else ev.title)
     description = (payload.get("description").strip() if isinstance(payload.get("description"), str) else (ev.description or ""))
-    start = _aware(parse_datetime(payload.get("start"))) if payload.get("start") else ev.start_datetime
-    end   = _aware(parse_datetime(payload.get("end")))   if payload.get("end")   else ev.end_datetime
+    start = _normalize_incoming_dt(parse_datetime(payload.get("start"))) if payload.get("start") else ev.start_datetime
+    end = _normalize_incoming_dt(parse_datetime(payload.get("end"))) if payload.get("end") else ev.end_datetime
     all_day = bool(payload.get("allDay")) if "allDay" in payload else ev.all_day
 
     if not title or not start or not end:
@@ -98,7 +112,7 @@ def api_event_detail(request, pk):
         return HttpResponseBadRequest("end must be after start")
 
     if all_day and start.date() == end.date():
-        end = timezone.make_aware(datetime.combine(end.date(), time.min), ZoneInfo("Asia/Jerusalem")) + timedelta(days=1)
+        end = timezone.make_aware(datetime.combine(end.date(), time.min), IL_TZ) + timedelta(days=1)
 
     ev.title = title
     ev.description = description

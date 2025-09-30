@@ -1,10 +1,9 @@
-
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
 
   // CSRF helper for Django
   function getCookie(name) {
-    const m = document.cookie.match('(^|;)\s*' + name + '\s*=\s*([^;]+)');
+    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
     return m ? decodeURIComponent(m.pop()) : null;
   }
   const CSRF = () => ({ "X-CSRFToken": getCookie("csrftoken") });
@@ -14,34 +13,64 @@
   const backdrop = $("#event-modal-backdrop");
   const modalClose = $("#event-modal-close");
   const form = $("#event-form");
+  const idIn = $("#ev-id");
   const titleIn = $("#ev-title");
   const descIn = $("#ev-desc");
   const startIn = $("#ev-start");
   const endIn = $("#ev-end");
   const allDayIn = $("#ev-all-day");
   const cancelBtn = $("#event-cancel");
+  const deleteBtn = $("#event-delete");
+  const submitBtn = $("#event-submit");
+  const modalTitle = $("#event-modal-title");
 
-  // For Date → datetime-local value (YYYY-MM-DDTHH:MM)
-  function toLocalInputValue(date) {
-    const d = (date instanceof Date) ? date : new Date(date);
-    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-    return local.toISOString().slice(0, 16);
-  }
+  let mode = "create";           // "create" | "edit"
+  let currentFcEvent = null;     // FullCalendar EventApi when editing
 
-  function setInputValueFromAny(inputEl, valueAny) {
-    if (typeof valueAny === 'string') {
-      // Expect an ISO-ish string: YYYY-MM-DDTHH:MM[:SS][±HH:MM|Z]
-      // We only need YYYY-MM-DDTHH:MM for datetime-local
-      const m = valueAny.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
-      inputEl.value = m ? `${m[1]}T${m[2]}` : toLocalInputValue(valueAny);
-    } else {
-      inputEl.value = toLocalInputValue(valueAny);
-    }
-  }
+  // Helpers for datetime-local
+/*function toLocalInputValue(date) {
+  const d = (date instanceof Date) ? date : new Date(date);
+  if (isNaN(d)) return "";
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
+}
+*/
 
-  function openModal(initial) {
-    titleIn.value = "";
-    descIn.value = "";
+function toLocalInputValue(date) {
+  if (!(date instanceof Date)) date = new Date(date);
+  if (isNaN(date)) return "";
+  return date.toISOString().slice(0, 16);
+}
+
+/*
+function toLocalInputValue(date) {
+  if (!(date instanceof Date)) date = new Date(date);
+  if (isNaN(date)) return "";
+  const pad = n => String(n).padStart(2, "0");
+  return date.getFullYear() + "-" +
+         pad(date.getMonth() + 1) + "-" +
+         pad(date.getDate()) + "T" +
+         pad(date.getHours()) + ":" +
+         pad(date.getMinutes());
+}
+*/
+
+
+
+
+function setInputValueFromAny(inputEl, valueAny) {
+  const d = (valueAny instanceof Date) ? valueAny : new Date(valueAny);
+  inputEl.value = toLocalInputValue(d);
+}
+
+
+  function openModal(initial, nextMode = "create", fcEvent = null) {
+    mode = nextMode;
+    currentFcEvent = fcEvent;
+
+    idIn.value = initial?.id ?? "";
+    titleIn.value = initial?.title ?? "";
+    descIn.value = initial?.description ?? "";
     allDayIn.checked = !!initial?.allDay;
 
     const now = new Date();
@@ -50,6 +79,11 @@
 
     setInputValueFromAny(startIn, startAny);
     setInputValueFromAny(endIn, endAny);
+
+    // UI mode toggles
+    modalTitle.textContent = (mode === "create") ? "New Event" : "Edit Event";
+    submitBtn.textContent = (mode === "create") ? "Create" : "Save";
+    deleteBtn.classList.toggle("hidden", mode !== "edit");
 
     backdrop.classList.remove("hidden");
     modal.classList.remove("hidden");
@@ -62,14 +96,16 @@
   cancelBtn?.addEventListener("click", closeModal);
   backdrop?.addEventListener("click", closeModal);
 
-  async function submitEvent() {
+  // ======== API helpers ========
+  async function createEvent() {
     const payload = {
       title: titleIn.value.trim(),
       description: descIn.value.trim(),
-      start: new Date(startIn.value).toISOString(),
-      end: new Date(endIn.value).toISOString(),
+      start: startIn.value,
+      end: endIn.value,
       allDay: allDayIn.checked,
     };
+    console.log("CREATE sending:", payload);
     const r = await fetch("/api/events/", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...CSRF() },
@@ -80,7 +116,32 @@
     return r.json();
   }
 
-  // ======== TASK PANEL ELEMENTS ========
+  async function patchEvent(id, partial) {
+    console.log("PATCH sending start:", partial.start, "end:", partial.end);
+
+    const r = await fetch(`/api/events/${id}/`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...CSRF() },
+      credentials: "same-origin",
+      body: JSON.stringify(partial),
+    });
+    if (!r.ok) throw new Error(await r.text() || "Failed updating event");
+    return r.json();
+  }
+
+  async function deleteEvent(id) {
+    const r = await fetch(`/api/events/${id}/`, {
+      method: "DELETE",
+      headers: { ...CSRF() },
+      credentials: "same-origin",
+    });
+    if (!r.ok && r.status !== 204) throw new Error(await r.text() || "Failed deleting event");
+  }
+
+
+
+
+  // ======== TASK PANEL ========
   const panel = $("#day-panel");
   const panelTitle = $("#day-panel-title");
   const panelClose = $("#day-panel-close");
@@ -185,12 +246,11 @@
       customButtons: {
         addEvent: {
           text: "New Event",
-          click: () => openModal({ start: new Date(), end: new Date(Date.now() + 60 * 60 * 1000), allDay: false })
+          click: () => openModal({ start: new Date(), end: new Date(Date.now() + 60 * 60 * 1000), allDay: false }, "create")
         }
       },
       firstDay: 0,
       timeZone: "Asia/Jerusalem",
-
       selectable: true,
       selectMirror: true,
       selectMinDistance: 2,
@@ -200,9 +260,12 @@
         return (vt === 'timeGridDay' || vt === 'timeGridWeek') && selectInfo.start < selectInfo.end;
       },
       select: function(info) {
-        // Use FullCalendar's own strings (already in calendar's tz)
-        openModal({ start: info.startStr, end: info.endStr, allDay: false });
+        openModal({ start: info.start, end: info.end, allDay: false }, "create");
       },
+
+      // Make events editable
+      editable: true,
+      eventResizableFromStart: true,
 
       events: function(fetchInfo, success, failure) {
         const url = `/api/calendar/?start=${encodeURIComponent(fetchInfo.startStr)}&end=${encodeURIComponent(fetchInfo.endStr)}`;
@@ -212,11 +275,50 @@
           .catch(failure);
       },
 
+      // Click to edit
+      eventClick: function(info) {
+        const e = info.event;
+        openModal({
+          id: e.id,
+          title: e.title,
+          description: e.extendedProps?.description || "",
+          start: e.start,
+          end: e.end || e.start, // ensure an end for the input
+          allDay: e.allDay
+        }, "edit", e);
+      },
+
+      // Drag or resize -> persist
+      eventDrop: async function(info) {
+        try {
+          await patchEvent(info.event.id, {
+          start: toLocalInputValue(info.event.start), // local "YYYY-MM-DDTHH:MM"
+          end: info.event.end ? toLocalInputValue(info.event.end) : null,
+          allDay: !!info.event.allDay
+          });
+        } catch (err) {
+          info.revert();
+          alert(err.message || "Failed to save move");
+        }
+      },
+      eventResize: async function(info) {
+        try {
+          await patchEvent(info.event.id, {
+          start: toLocalInputValue(info.event.start),
+          end: info.event.end ? toLocalInputValue(info.event.end) : null,
+          allDay: !!info.event.allDay
+          });
+        } catch (err) {
+          info.revert();
+          alert(err.message || "Failed to save resize");
+        }
+      },
+
       dateClick: async function (info) {
         const vt = calendar.view ? calendar.view.type : 'dayGridMonth';
         if (vt !== 'dayGridMonth') return;
-        document.querySelectorAll('.fc-daygrid-day').forEach(el => el.classList.remove('fc-day-selected')); // NEW
-        info.dayEl.classList.add('fc-day-selected'); // NEW
+        document.querySelectorAll('.fc-daygrid-day').forEach(el => el.classList.remove('fc-day-selected'));
+        info.dayEl.classList.add('fc-day-selected');
         const isoDate = info.dateStr;
         renderDaySkeleton(isoDate);
         try {
@@ -227,15 +329,58 @@
     });
 
     calendar.render();
-
+    window.calendar = calendar;
+    // Form submit (create or save edit)
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
-        const ev = await submitEvent();
-        calendar.addEvent({ id: ev.id, title: ev.title, start: ev.start, end: ev.end, allDay: ev.allDay });
+        if (mode === "create") {
+          const ev = await createEvent();
+          // include description in extendedProps if returned
+          calendar.addEvent({
+            id: ev.id, title: ev.title, start: ev.start, end: ev.end, allDay: ev.allDay,
+            extendedProps: { description: ev.description || "" }
+          });
+        } else {
+          const id = idIn.value;
+          const updated = await patchEvent(id, {
+            title: titleIn.value.trim(),
+            description: descIn.value.trim(),
+            start: startIn.value, // send local naive string
+            end: endIn.value,     // send local naive string
+            allDay: allDayIn.checked
+          });
+
+          if (currentFcEvent) {
+            currentFcEvent.setProp("title", updated.title);
+            currentFcEvent.setStart(updated.start);
+            currentFcEvent.setEnd(updated.end);
+            currentFcEvent.setAllDay(!!updated.allDay);
+            if (currentFcEvent.setExtendedProp) {
+              currentFcEvent.setExtendedProp("description", updated.description || "");
+            }
+          } else {
+            // fallback if we somehow lost the event reference
+            calendar.refetchEvents();
+          }
+        }
         closeModal();
       } catch (err) {
-        alert(err.message || "Failed creating event");
+        alert(err.message || "Failed saving event");
+      }
+    });
+
+    // Delete (icon button)
+    deleteBtn?.addEventListener("click", async () => {
+      if (mode !== "edit") return;
+      const id = idIn.value;
+      try {
+        await deleteEvent(id);
+        // remove from calendar UI
+        if (currentFcEvent) currentFcEvent.remove();
+        closeModal();
+      } catch (err) {
+        alert(err.message || "Failed deleting event");
       }
     });
   });

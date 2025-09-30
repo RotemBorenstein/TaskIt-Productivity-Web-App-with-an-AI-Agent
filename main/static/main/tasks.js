@@ -1,71 +1,184 @@
-// main/static/main/tasks.js
-console.log("tasks.js loaded!");
 
 document.addEventListener("DOMContentLoaded", function () {
-  // 1. AJAX "Mark Complete" for all checkboxes
-  document.querySelectorAll(".task-checkbox").forEach(function (checkbox) {
-    checkbox.addEventListener("change", function () {
-      if (!checkbox.checked) return;
-      const taskId = checkbox.getAttribute("data-task-id");
-      if (!taskId) return;
+  // ----------------------------
+  // Helper for CSRF token
+  // ----------------------------
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
 
-      // CSRF token retrieval
-      function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== "") {
-          const cookies = document.cookie.split(";");
-          for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === name + "=") {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
+  // ----------------------------
+  // Bind checkboxes
+  // ----------------------------
+  function bindCheckboxes() {
+    document.querySelectorAll(".task-checkbox").forEach(function (checkbox) {
+      // prevent duplicate listeners
+      if (checkbox.dataset.bound === "true") return;
+      checkbox.dataset.bound = "true";
+
+      checkbox.addEventListener("change", function () {
+        if (!checkbox.checked) return;
+        const taskId = checkbox.getAttribute("data-task-id");
+        if (!taskId) return;
+
+        const csrftoken = getCookie("csrftoken");
+
+        const data = new URLSearchParams();
+        data.append("task_id", taskId);
+
+        fetch("/tasks/complete/", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: data,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              const li = document.getElementById(`task-${taskId}`);
+              if (li) {
+                li.classList.add("fade-out");
+                setTimeout(() => li.remove(), 500);
+              }
+            } else {
+              alert("Failed to complete task: " + (data.error || "Unknown error"));
+              checkbox.checked = false;
             }
+          })
+          .catch(() => {
+            alert("Network error: could not mark task as complete.");
+            checkbox.checked = false;
+          });
+      });
+    });
+  }
+
+  // ----------------------------
+  // Bind anchor buttons
+  // ----------------------------
+  function bindAnchorButtons() {
+    document.querySelectorAll(".anchor-btn").forEach(function (btn) {
+      // prevent duplicate listeners
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        const taskId = btn.getAttribute("data-task-id");
+        if (!taskId) return;
+
+        fetch(`/tasks/${taskId}/toggle_anchor/`, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              btn.innerHTML = data.anchored
+                ? '<span class="anchored" title="Anchored">📌</span>'
+                : '<span class="not-anchored" title="Click to anchor">📍</span>';
+            } else {
+              alert(data.error || "Failed to toggle anchor. Please try again.");
+            }
+          })
+          .catch(() => alert("Network error: could not toggle anchor."));
+      });
+    });
+  }
+
+  // ----------------------------
+  // Refresh tasks list
+  // ----------------------------
+  window.refreshTasks = function () {
+    console.log("refreshTasks() called");
+    fetch("/api/tasks/", { credentials: "same-origin" })
+      .then((res) => {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then((data) => {
+        // DAILY TASKS
+        const dailyList = document.getElementById("daily-tasks-list");
+        if (dailyList) {
+          dailyList.innerHTML = "";
+          if (data.daily_tasks.length === 0) {
+            dailyList.innerHTML = "<li>No daily tasks. Enjoy your day!</li>";
+          } else {
+            data.daily_tasks.forEach((t) => {
+              const li = document.createElement("li");
+              li.id = `task-${t.id}`;
+              li.innerHTML = `
+                <label>
+                  <input type="checkbox" class="task-checkbox" data-task-id="${t.id}">
+                  <span class="task-title">${t.title}</span>
+                </label>
+                ${t.description ? `<div class="task-desc">${t.description}</div>` : ""}
+                <button class="anchor-btn" data-task-id="${t.id}" aria-label="Toggle anchor">
+                  ${t.is_anchored
+                    ? '<span class="anchored" title="Anchored">📌</span>'
+                    : '<span class="not-anchored" title="Click to anchor">📍</span>'}
+                </button>
+                <a href="/tasks/${t.id}/edit/">Edit</a>
+                <a href="/tasks/${t.id}/delete/">Delete</a>
+              `;
+              dailyList.appendChild(li);
+            });
           }
         }
-        return cookieValue;
-      }
-      const csrftoken = getCookie("csrftoken");
 
-      // Send AJAX POST to /tasks/complete/
-      const data = new URLSearchParams();
-      data.append("task_id", taskId);
-
-      fetch("/tasks/complete/", {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": csrftoken,
-          "X-Requested-With": "XMLHttpRequest",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: data,
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            // Fade out and remove the task <li>
-            const li = document.getElementById(`task-${taskId}`);
-            if (li) {
-              li.classList.add("fade-out");
-              setTimeout(() => {
-                li.remove();
-              }, 500);
-            }
+        // LONG-TERM TASKS
+        const longList = document.getElementById("long-tasks-list");
+        if (longList) {
+          longList.innerHTML = "";
+          if (data.long_tasks.length === 0) {
+            longList.innerHTML = "<li>No long-term tasks yet.</li>";
           } else {
-            alert("Failed to complete task: " + (data.error || "Unknown error"));
-            checkbox.checked = false;
+            data.long_tasks.forEach((t) => {
+              const li = document.createElement("li");
+              li.id = `task-${t.id}`;
+              li.innerHTML = `
+                <label>
+                  <input type="checkbox" class="task-checkbox" data-task-id="${t.id}">
+                  <span class="task-title">${t.title}</span>
+                </label>
+                ${t.description ? `<div class="task-desc">${t.description}</div>` : ""}
+                <a href="/tasks/${t.id}/edit/">Edit</a>
+                <a href="/tasks/${t.id}/delete/">Delete</a>
+              `;
+              longList.appendChild(li);
+            });
           }
-        })
-        .catch(() => {
-          alert("Network error: could not mark task as complete.");
-          checkbox.checked = false;
-        });
-    });
-  });
+        }
 
-  // 2. Show/Hide Add Task Forms for Each Section
+        // After rebuilding lists, rebind checkboxes + anchors
+        bindCheckboxes();
+        bindAnchorButtons();
+      })
+      .catch((err) => console.error("refreshTasks failed:", err));
+  };
+
+  // ----------------------------
+  // Show/Hide Add Task Forms
+  // ----------------------------
   function showForm(formId) {
     document.getElementById(formId).style.display = "block";
-    // Optionally close the other form
     if (formId === "daily-form-container") {
       document.getElementById("long-form-container").style.display = "none";
     } else {
@@ -76,7 +189,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById(formId).style.display = "none";
   }
 
-  // Show buttons
   var showDailyBtn = document.getElementById("show-daily-form");
   var showLongBtn = document.getElementById("show-long-form");
   if (showDailyBtn) {
@@ -90,7 +202,6 @@ document.addEventListener("DOMContentLoaded", function () {
     };
   }
 
-  // Close buttons
   var closeDailyBtn = document.getElementById("close-daily-form");
   var closeLongBtn = document.getElementById("close-long-form");
   if (closeDailyBtn) {
@@ -103,4 +214,10 @@ document.addEventListener("DOMContentLoaded", function () {
       hideForm("long-form-container");
     };
   }
+
+  // ----------------------------
+  // Initial bindings
+  // ----------------------------
+  bindCheckboxes();
+  bindAnchorButtons();
 });
