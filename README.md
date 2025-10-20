@@ -1,7 +1,7 @@
 # TaskIt – Productivity Web-App with an AI Agent
 
 **TaskIt** is a full-stack productivity web application built with **Django**, **PostgreSQL**, and **JavaScript (FullCalendar)**.  
-It helps users organize tasks, schedule events, and track progress — all enhanced by an integrated **AI chat agent** powered by **LangChain** and the **OpenAI API**.
+It helps users organize tasks, schedule events, and track progress - all enhanced by an integrated **AI chat agent** powered by **LangChain** and the **OpenAI API**.
 
 ---
 
